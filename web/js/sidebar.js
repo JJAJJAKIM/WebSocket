@@ -1,13 +1,21 @@
 $(document).ready(function() {
 
-    const server = "http://localhost:8080";
+    const channels = [
+        {channelNo: 1, channelNm: "야놀자", prefixes: "/topic/bean1", topic: "/msg/conn1"},
+        {channelNo: 2, channelNm: "쿡방", prefixes: "/topic/bean2", topic: "/msg/conn2"},
+        {channelNo: 3, channelNm: "배민", prefixes: "/topic/bean3", topic: "/msg/conn3"}
+    ];
+    var prefixes = "";
+
+    const server = "http://192.168.0.3:8080";
     var stompClient = null;
     class User {
-        constructor(userNo, userNm, message, time) {
+        constructor(userNo, userNm, message, time, prefixes) {
             this.userNo = userNo;
             this.userNm = userNm;
             this.message = message;
             this.time = time;
+            this.prefixes = prefixes;
         }
     };
     const EVENT1 = (endpoint, topic) => {
@@ -16,20 +24,28 @@ $(document).ready(function() {
         stompClient.connect({}, frame => {
             console.log("2단계", frame);
             stompClient.subscribe(topic, EVENT2);
-        }, ERROR);
+        }, error => console.log(error));
     };
-    const EVENT2 = msg => console.log("4단계", JSON.parse(msg.body));
+    const EVENT2 = msg => DRAW(JSON.parse(msg.body)); //console.log("4단계", JSON.parse(msg.body));
     const EVENT3 = (prefixes, user) => {
         console.log("3단계");
 		stompClient.send(prefixes, {}, JSON.stringify(user));
     };
+
+    const EVENT4 = () => {
+        /* 소켓 종료 할때 사용하는 이벤트 */
+        stompClient.disconnect(()=>{
+            console.log("연결 종료");
+        });
+    }
+
     // 웹소켓에서 전달 받은 메세지 출력 이벤트
     const DRAW = (user) => {
-        let html = `<div class="message ${user.userNo == 2 ? 'message-right' : 'message-left'}">
+        let html = `<div class="message ${user.userNm == localStorage.getItem("userNm") ? 'message-right' : 'message-left'}">
                 <h3 class="message-user">${user.userNm}:</h3>
                 <div class="message-body">
                     <p class="message-content">${user.message}</p>
-                    <p class="message-time ${user.userNo == 2 ? 'message-left' : 'message-right'}message-right">${user.time}</p>
+                    <p class="message-time ${user.userNo == localStorage.getItem("userNm") ? 'message-left' : 'message-right'}message-right">${user.time}</p>
                 </div>
             </div>`;
         $(".messages").append(html);
@@ -54,15 +70,22 @@ $(document).ready(function() {
             $("#channel").text($(this).children(".channel-txt").text());
             $("#message").attr("readonly",false);
             $("#messageForm button").attr("disabled", false);
+
+            var index = $(".channel").index(this);
+            // console.log(index, channels[index], channels[index].prefixes);
+            // 채팅 글이 나왔을때 화면에 표현되는 데이터
+            /*
             const list = [
                 new User(1, "류관순", "안녕하세요!", "15:23"),
                 new User(2, "홍길동", "안녕!!", "15:25")
             ];
             $(".messages").empty();
             list.forEach(user => DRAW(user));
-
+            */
             // 웹소켓 호출 부분
-            //EVENT1(server+"/ws-app", "/topic/bean");
+            // EVENT1(server+"/ws-app", "/topic/bean");
+            prefixes = channels[index].prefixes
+            EVENT1(server+"/ws-app", prefixes);
         });
     };
 
@@ -71,6 +94,7 @@ $(document).ready(function() {
         $("#message").attr("readonly",true);
         $("#messageForm button").attr("disabled", true);
         $(".messages").empty();
+        EVENT4();
     });
 
     // 모달 방식 로그인 이벤트
@@ -85,13 +109,15 @@ $(document).ready(function() {
     });
     $("form#loginForm").on("submit", e => {
         e.preventDefault();
-        alert("loginForm!!");
+        // alert("loginForm!!");
+        localStorage.setItem("userNm", $("#username").val());
+        $("#modal").hide();
     });
 
     // 메세지 전송 이벤트
     $("form#messageForm").on("submit", e => {
         e.preventDefault();
-        alert("messageForm!!");
+        // alert("messageForm!!");
 
         /************************************
          * #전송하는 대상자 정보 및 메세지 담기
@@ -100,17 +126,18 @@ $(document).ready(function() {
          * @message : 메세지 내용
          * @time : 전송하는 시간
          ************************************/
-        //var user = new User(userNo, userNm, message, time);
+        const currentDate = new Date();
+        const formattedDate = `${currentDate.getHours()}:${currentDate.getMinutes()}`
+        if(localStorage.getItem("userNm") == ""){
+            return;
+        }
+        var user = new User(3, localStorage.getItem("userNm"), $("#message").val(),formattedDate, prefixes);
+        $("#message").val("");
         // 웹소켓 메세지 전송 부분
-        //EVENT3("/msg/conn", user);
+        EVENT3("/msg/conn", user);
     });
 
     const fnChannel = () => {
-        const channels = [
-            {channelNo: 1, channelNm: "야놀자", prefixes: "/topic/bean1", topic: "/msg/conn1"},
-            {channelNo: 2, channelNm: "쿡방", prefixes: "/topic/bean2", topic: "/msg/conn2"},
-            {channelNo: 3, channelNm: "배민", prefixes: "/topic/bean3", topic: "/msg/conn3"}
-        ];
 
         channels.forEach(channel => {
             let html = `<li class="channel"># <span class="channel-txt">${channel.channelNm}</span></li>`;
