@@ -49,6 +49,16 @@ public class MessageController {
 		}
 	}
 
+	// "/msg/set"
+	@MessageMapping("/set")
+	// "/topic/get"
+	@SendTo("/topic/get")
+	public String conn2(String msg) {
+		log.info("Messge : {}", msg);
+		return "성공";
+	}
+
+
 	@EventListener
 	public void handleSessionConnectEvent(SessionConnectEvent event) {
 		System.out.println("Session Connect Event");

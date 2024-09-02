@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Page1</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.0/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script>
+        const socket = new SockJS("http://localhost:8080/ws-app");
+        const client = Stomp.over(socket);
+
+        // 커넥션이 성공했을때 콜백 함수
+        const EVENT1 = () => {
+            console.log("접속 성공");
+            client.subscribe("/topic/get", res => console.log(res));
+        }
+        // 커넥션이 실패 했을때 콜백 함수
+        const EVENT2 = () => console.log("접속 실패");
+
+        client.connect({}, EVENT1, EVENT2);
+
+        // 소켓 접속이 성공하고 난 후에 동작해야 하는 메세지 전송 기능.
+        const EVENT3 = () => {
+            console.log(client);
+            if(client.connected){
+                client.send("/msg/set", {}, "똥고앵이 김짜짜");
+            } else {
+                alert("소켓 정보 없당.");
+            }
+        }
+
+    </script>
+</head>
+<body>
+    <button type="button" onclick="EVENT3()">버튼</button>
+
+</body>
+</html>
