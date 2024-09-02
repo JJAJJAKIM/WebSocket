@@ -1,56 +1,79 @@
 $(document).ready(function() {
-
-    const channels = [
-        {channelNo: 1, channelNm: "야놀자", prefixes: "/topic/bean1", topic: "/msg/conn1"},
-        {channelNo: 2, channelNm: "쿡방", prefixes: "/topic/bean2", topic: "/msg/conn2"},
-        {channelNo: 3, channelNm: "배민", prefixes: "/topic/bean3", topic: "/msg/conn3"}
-    ];
-    var prefixes = "";
-
-    const server = "http://192.168.0.3:8080";
+    const server = "http://localhost:8080";
     var stompClient = null;
-    class User {
-        constructor(userNo, userNm, message, time, prefixes) {
-            this.userNo = userNo;
-            this.userNm = userNm;
+    var message = null;
+    var user = null;
+    var prefixe = null;
+
+    class Payload {
+        constructor(message, user) {
             this.message = message;
-            this.time = time;
-            this.prefixes = prefixes;
+            this.user = user;
         }
     };
-    const EVENT1 = (endpoint, topic) => {
-        console.log("1단계");
-        stompClient = Stomp.over(new SockJS(endpoint));
-        stompClient.connect({}, frame => {
-            console.log("2단계", frame);
-            stompClient.subscribe(topic, EVENT2);
-        }, error => console.log(error));
+    class Message {
+        constructor(topic, message, time) {
+            this.topic = topic;
+            this.message = message;
+            this.time = time;
+        }
+        setMessage(msg) {
+            this.message = msg;
+        }
+    }
+    class User {
+        constructor(userNm) {
+            this.userNm = userNm;
+        }
+    }
+    const EVENT1 = (endpoint) => {
+        stompClient = Stomp.over(new SockJS(server+endpoint));
+        //stompClient.debug = () => {}; // 해당 코드를 주석처리하면 더이선 브라우저 콘솔에 웹소켓 로그가 노출되지 않는다.
+        stompClient.connect({}, EVENT5, error => {console.log("ERROR",error); alert("서버가 종료 되었습니다."); resetForm();});
     };
-    const EVENT2 = msg => DRAW(JSON.parse(msg.body)); //console.log("4단계", JSON.parse(msg.body));
-    const EVENT3 = (prefixes, user) => {
-        console.log("3단계");
-		stompClient.send(prefixes, {}, JSON.stringify(user));
+    const EVENT2 = msg => DRAW(JSON.parse(msg.body));
+    const EVENT3 = (prefixes, payload) => {
+		stompClient.send(prefixes, {}, JSON.stringify(payload));
     };
-
     const EVENT4 = () => {
-        /* 소켓 종료 할때 사용하는 이벤트 */
         stompClient.disconnect(()=>{
             console.log("연결 종료");
         });
     }
-
+    const EVENT5 = () => {
+        if(message != null) {
+            stompClient.subscribe(message.topic, EVENT2);
+        }
+    }
     // 웹소켓에서 전달 받은 메세지 출력 이벤트
-    const DRAW = (user) => {
-        let html = `<div class="message ${user.userNm == localStorage.getItem("userNm") ? 'message-right' : 'message-left'}">
-                <h3 class="message-user">${user.userNm}:</h3>
+    const DRAW = (payload) => {
+        let messagePosition = isValidUse(payload) ? 'message-right' : 'message-left';
+        let messageContentPosition = isValidUse(payload) ? 'message-content-right' : 'message-content-left';
+        let messageTimePosition = isValidUse(payload) ? 'message-left' : 'message-right';
+        let html = `<div class="message ${messagePosition}">
+                <h3 class="message-user">${payload.user.userNm}:</h3>
                 <div class="message-body">
-                    <p class="message-content">${user.message}</p>
-                    <p class="message-time ${user.userNo == localStorage.getItem("userNm") ? 'message-left' : 'message-right'}message-right">${user.time}</p>
+                    <p class="message-content ${messageContentPosition}">${payload.message.message}</p>
+                    <p class="message-time ${messageTimePosition}">${payload.message.time}</p>
                 </div>
             </div>`;
         $(".messages").append(html);
+        $('.messages').scrollTop($('.messages')[0].scrollHeight);
     };
-
+    const isValidUse = (payload) => {
+        return payload.user.userNm == localStorage.getItem("userNm");
+    };
+    const resetForm = () => {
+        $("#channel").text("");
+        $("#message").attr("readonly",true);
+        $("#messageForm button").attr("disabled", true);
+        $(".messages").empty();
+    };
+    // 연결된 소켓 접속 종료 이벤트
+    $("#socketClose").on("click", () => {
+        resetForm();
+        EVENT4();
+    });
     // 슬라이드 이벤트 
     $('#logo').on('click', () => {
         let width = $('#sidebar').width();
@@ -63,40 +86,6 @@ $(document).ready(function() {
             }
         });        
     });
-
-    const fnChannelEvent = () => {
-        // 채널 목록 중 하나를 선택하면 발생하는 이벤트
-        $(".channel").off().on("click", function() {
-            $("#channel").text($(this).children(".channel-txt").text());
-            $("#message").attr("readonly",false);
-            $("#messageForm button").attr("disabled", false);
-
-            var index = $(".channel").index(this);
-            // console.log(index, channels[index], channels[index].prefixes);
-            // 채팅 글이 나왔을때 화면에 표현되는 데이터
-            /*
-            const list = [
-                new User(1, "류관순", "안녕하세요!", "15:23"),
-                new User(2, "홍길동", "안녕!!", "15:25")
-            ];
-            $(".messages").empty();
-            list.forEach(user => DRAW(user));
-            */
-            // 웹소켓 호출 부분
-            // EVENT1(server+"/ws-app", "/topic/bean");
-            prefixes = channels[index].prefixes
-            EVENT1(server+"/ws-app", prefixes);
-        });
-    };
-
-    $("#socketClose").on("click", () => {
-        $("#channel").text("");
-        $("#message").attr("readonly",true);
-        $("#messageForm button").attr("disabled", true);
-        $(".messages").empty();
-        EVENT4();
-    });
-
     // 모달 방식 로그인 이벤트
     $(".server").on("click", () => {
         $('#modal').toggle();
@@ -109,42 +98,53 @@ $(document).ready(function() {
     });
     $("form#loginForm").on("submit", e => {
         e.preventDefault();
-        // alert("loginForm!!");
         localStorage.setItem("userNm", $("#username").val());
-        $("#modal").hide();
+        $('#modal').hide();
     });
-
     // 메세지 전송 이벤트
     $("form#messageForm").on("submit", e => {
         e.preventDefault();
-        // alert("messageForm!!");
-
-        /************************************
-         * #전송하는 대상자 정보 및 메세지 담기
-         * @userNo : 사용자 번호
-         * @userNm : 사용자 이름
-         * @message : 메세지 내용
-         * @time : 전송하는 시간
-         ************************************/
-        const currentDate = new Date();
-        const formattedDate = `${currentDate.getHours()}:${currentDate.getMinutes()}`
-        if(localStorage.getItem("userNm") == ""){
+        if(localStorage.getItem("userNm") == null) {
+            $("#message").val("");
+            $('#modal').toggle();
             return;
         }
-        var user = new User(3, localStorage.getItem("userNm"), $("#message").val(),formattedDate, prefixes);
+        user = new User(localStorage.getItem("userNm"));
+        message.setMessage($("#message").val());
+        var payload = new Payload(message, user);
         $("#message").val("");
-        // 웹소켓 메세지 전송 부분
-        EVENT3("/msg/conn", user);
+        EVENT3(prefixe, payload);
     });
-
-    const fnChannel = () => {
-
-        channels.forEach(channel => {
-            let html = `<li class="channel"># <span class="channel-txt">${channel.channelNm}</span></li>`;
-            $("#channel-list").append(html);
+    const fnChannelEvent = (channels) => {
+        // 채널 목록 중 하나를 선택하면 발생하는 이벤트
+        $(".channel").off().on("click", function() {
+            $("#channel").text($(this).children(".channel-txt").text());
+            $("#message").attr("readonly",false);
+            $("#messageForm button").attr("disabled", false);
+            $(".messages").empty();
+            if(stompClient != null) EVENT4();
+            var index = $(".channel").index(this);
+            var target = channels[index];
+            prefixe = target.prefixe;
+            message = new Message(target.topic, "", "");
+            EVENT1("/ws-app");
         });
-
-        fnChannelEvent();
+    };
+    // 채널 목록을 화면에 출력하는 이벤트
+    const CHANNEL = res => {
+        if(res != null) {
+            res.forEach(channel => {
+                let html = `<li class="channel"># <span class="channel-txt">${channel.channelNm}</span></li>`;
+                $("#channel-list").append(html);
+            });
+            fnChannelEvent(res);
+        }
     }
-    fnChannel();
+    // 채널 목록 가져오기 비동기 요청
+    $.ajax({
+        method: "POST",
+        url: server+"/getChannel",
+        success: CHANNEL,
+        error: res => console.log("error", res)
+    });
 });

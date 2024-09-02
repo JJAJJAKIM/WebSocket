@@ -127,9 +127,17 @@ h1, h2, h3, p, ul {
 .message-content {
     padding: 5px 10px;
     border-radius: 5px;
+    display: inline-block;
+}
+
+.message-content-left {
     background-color: antiquewhite;
     color: #000000;
-    display: inline-block;
+}
+
+.message-content-right {
+    background-color: rgb(215, 241, 197);
+    color: #000000;
 }
 
 .message-time {
