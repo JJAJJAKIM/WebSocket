@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Page2</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.0/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="/js/test.js"></script>
+    <style>
+        <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+        header {
+            display: flex;
+            float: right;
+        }
+        header button {
+            width: 100px;
+            height: 100px;
+        }
+        main {
+            padding-bottom: 120px; /* 버튼의 높이보다 약간 큰 값 */
+        }
+        .messages {
+            padding: 20px;
+            height: 850px;
+            overflow-y: auto;
+        }
+        .input-area {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #ccc;
+        }
+        .servers {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .server {
+            width: 40px;
+            height: 40px;
+            background-color: #202225;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .server:hover {
+            background-color: #535b66;
+        }
+        .server img {
+            width: 90%;
+            height: 90%;
+            border-radius: 50%;
+            object-fit: cover;
+            padding: 5%;
+        }
+        .server-txt {
+            flex: 1;
+            padding: 0 5px;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 0 auto; /* 15% from the top and centered */
+            padding: 20px;
+            border: 10px solid #888;
+            width: 100%; /* Could be more or less, depending on screen size */
+            max-width: 800px; /* Maximum width of modal */
+            border-radius: 50px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        form {
+            display: flex;
+        }
+        form input {
+            height: 100px;
+            width: 80%;
+            font-size: 20px;
+        }
+        form button{
+            width: 20%;
+            height: 106px;
+            margin: 0px;
+            padding: 0px;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div class="servers">
+        <div class="server">
+            <img alt="로그인" src="/img/login.png">
+        </div>
+        <h3 class="server-txt">로그인</h3>
+    </div>
+    <div class="channels">
+        <button id="btn2" type="button">채널 접속</button>
+    </div>
+</header>
+<main>
+        <div class="modal" id="modal">
+            <div class="modal-content">
+                <span class="close" id="close">&times;</span>
+                <h2>Login</h2>
+                <form id="loginForm">
+                    <div>
+                        <label for="username">Username</label>
+                        <input id="username" name="username" required type="text">
+                    </div>
+                    <div>
+                        <label for="password">Password</label>
+                        <input id="password" name="password" required
+                               type="password">
+                    </div>
+                    <button type="submit">로그인</button>
+                </form>
+            </div>
+        </div>
+
+    <div class="messages">
+
+
+    </div>
+    <div class="input-area">
+        <form id="messageForm">
+                <input type="test" id="message" name="message">
+                <button id="btn3" type="submit">전송</button>
+        </form>
+    </div>
+
+</main>
+</body>
+</html>

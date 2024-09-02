@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
+import com.app.dto.DataDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -51,11 +52,12 @@ public class MessageController {
 
 	// "/msg/set"
 	@MessageMapping("/set")
-	// "/topic/get"
+	//"/topic/get"
 	@SendTo("/topic/get")
-	public String conn2(String msg) {
-		log.info("Messge : {}", msg);
-		return "성공";
+	public DataDTO conn2(@Payload DataDTO dto) {
+		log.info("Message : {}", dto);
+		dto.setTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
+		return dto;
 	}
 
 
